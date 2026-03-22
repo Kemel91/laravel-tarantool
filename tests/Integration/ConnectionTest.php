@@ -62,12 +62,12 @@ class ConnectionTest extends TestCase
         $provider->boot();
         Facade::setFacadeApplication($this->app);
 
-        $this->dropTables('players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'users', 'locations');
+        $this->dropTables('npc_dialogs', 'players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'npcs', 'users', 'locations');
     }
 
     protected function tearDown(): void
     {
-        $this->dropTables('players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'users', 'locations');
+        $this->dropTables('npc_dialogs', 'players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'npcs', 'users', 'locations');
         Facade::clearResolvedInstances();
         Facade::setFacadeApplication(null);
         Container::setInstance(null);
@@ -338,6 +338,47 @@ class ConnectionTest extends TestCase
         self::assertIsInt($playerId);
         self::assertSame(0, $connection->table('players')->where('id', $playerId)->value('life'));
         self::assertSame(1, $connection->table('players')->where('id', $playerId)->value('level'));
+    }
+
+    public function test_jsonb_columns_can_be_created_and_written(): void
+    {
+        $connection = $this->db->connection('tarantool');
+
+        $connection->getSchemaBuilder()->create('npcs', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+        });
+
+        $migration = new class extends Migration
+        {
+            public function up(): void
+            {
+                Schema::create('npc_dialogs', function (Blueprint $table): void {
+                    $table->id();
+                    $table->foreignId('npc_id')->index()->constrained('npcs');
+                    $table->jsonb('json');
+                    $table->timestamps();
+                });
+            }
+
+            public function down(): void
+            {
+                Schema::dropIfExists('npc_dialogs');
+            }
+        };
+
+        $migration->up();
+
+        $npcId = $connection->table('npcs')->insertGetId(['name' => 'Guide']);
+        $dialogId = $connection->table('npc_dialogs')->insertGetId([
+            'npc_id' => $npcId,
+            'json' => '{"hello":"world"}',
+            'created_at' => '2026-03-23 00:00:00',
+            'updated_at' => '2026-03-23 00:00:00',
+        ]);
+
+        self::assertIsInt($dialogId);
+        self::assertSame('{"hello":"world"}', $connection->table('npc_dialogs')->where('id', $dialogId)->value('json'));
     }
 
     private function createBasicUsersTable(): void

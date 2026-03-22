@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.5] - 2026-03-23
+
+### Fixed
+- Added `jsonb()` column support to the Tarantool schema grammar.
+- Mapped `jsonb` to the same underlying Tarantool SQL type as `json`.
+- Added regression coverage for Laravel migrations using `jsonb()` together with foreign keys and timestamps.
+
 ## [2.0.4] - 2026-03-23
 
 ### Fixed

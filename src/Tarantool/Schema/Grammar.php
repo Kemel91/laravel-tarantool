@@ -615,6 +615,20 @@ class Grammar extends BaseGrammar
     }
 
     /**
+     * Create the column definition for a jsonb type.
+     *
+     * Tarantool does not currently distinguish JSONB from JSON in this driver,
+     * so we map it to the same underlying SQL type.
+     *
+     * @param  \Illuminate\Support\Fluent  $column
+     * @return string
+     */
+    protected function typeJsonb(Fluent $column)
+    {
+        return $this->typeJson($column);
+    }
+
+    /**
      * Create the column definition for a date type.
      *
      * @param  \Illuminate\Support\Fluent  $column
