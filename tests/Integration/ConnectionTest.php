@@ -12,6 +12,7 @@ use Illuminate\Database\Connectors\ConnectionFactory;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Migrations\DatabaseMigrationRepository;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Support\Facades\Facade;
@@ -61,12 +62,12 @@ class ConnectionTest extends TestCase
         $provider->boot();
         Facade::setFacadeApplication($this->app);
 
-        $this->dropTables('users', 'password_reset_tokens', 'sessions', 'migrations');
+        $this->dropTables('users', 'password_reset_tokens', 'sessions', 'migrations', 'location_transitions', 'locations');
     }
 
     protected function tearDown(): void
     {
-        $this->dropTables('users', 'password_reset_tokens', 'sessions', 'migrations');
+        $this->dropTables('users', 'password_reset_tokens', 'sessions', 'migrations', 'location_transitions', 'locations');
         Facade::clearResolvedInstances();
         Facade::setFacadeApplication(null);
         Container::setInstance(null);
@@ -234,6 +235,53 @@ class ConnectionTest extends TestCase
             ],
             $repository->getRan()
         );
+    }
+
+    public function test_composite_unique_columns_can_be_promoted_to_primary_key_for_create_table(): void
+    {
+        $connection = $this->db->connection('tarantool');
+
+        $connection->getSchemaBuilder()->create('locations', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+        });
+
+        $migration = new class extends Migration
+        {
+            public function up(): void
+            {
+                Schema::create('location_transitions', function (Blueprint $table): void {
+                    $table->foreignId('from_location_id')->index()->constrained('locations');
+                    $table->foreignId('to_location_id')->index()->constrained('locations');
+                    $table->string('transition_name');
+                    $table->unique(['from_location_id', 'to_location_id']);
+                });
+            }
+
+            public function down(): void
+            {
+                Schema::dropIfExists('location_transitions');
+            }
+        };
+
+        $migration->up();
+
+        $fromLocationId = $connection->table('locations')->insertGetId(['name' => 'A']);
+        $toLocationId = $connection->table('locations')->insertGetId(['name' => 'B']);
+
+        self::assertTrue($connection->table('location_transitions')->insert([
+            'from_location_id' => $fromLocationId,
+            'to_location_id' => $toLocationId,
+            'transition_name' => 'move',
+        ]));
+
+        $this->expectException(QueryException::class);
+
+        $connection->table('location_transitions')->insert([
+            'from_location_id' => $fromLocationId,
+            'to_location_id' => $toLocationId,
+            'transition_name' => 'move-again',
+        ]);
     }
 
     private function createBasicUsersTable(): void

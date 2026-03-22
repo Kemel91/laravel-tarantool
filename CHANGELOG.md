@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.3] - 2026-03-23
+
+### Fixed
+- Added support for Laravel-style pivot tables that define a composite `unique(...)` key but no explicit primary key.
+- Promoted the first non-null composite unique key to `PRIMARY KEY` during `CREATE TABLE` when Tarantool requires one.
+- Added regression coverage for transition / pivot-style migrations with composite keys on Tarantool `latest`.
+
 ## [2.0.2] - 2026-03-23
 
 ### Changed

@@ -134,6 +134,68 @@ class Grammar extends BaseGrammar
     }
 
     /**
+     * Determine whether the compiled column list already contains a primary key.
+     */
+    private function columnsContainPrimaryKey(array $columns): bool
+    {
+        foreach ($columns as $column) {
+            if (stripos($column, 'PRIMARY KEY') !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get a unique key that can be safely promoted to a primary key.
+     */
+    private function getPromotableUniqueColumns(Blueprint $blueprint): array
+    {
+        if (! empty($this->getPrimaryColumns($blueprint))) {
+            return [];
+        }
+
+        foreach ($blueprint->getCommands() as $command) {
+            if ($command->name !== 'unique') {
+                continue;
+            }
+
+            $columns = (array) $command->columns;
+
+            if ($columns !== [] && $this->columnsAreRequired($blueprint, $columns)) {
+                return $columns;
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * Determine whether all given columns are non-nullable on the blueprint.
+     */
+    private function columnsAreRequired(Blueprint $blueprint, array $columns): bool
+    {
+        $definitions = [];
+
+        foreach ($blueprint->getColumns() as $column) {
+            $definitions[$column->name] = $column;
+        }
+
+        foreach ($columns as $columnName) {
+            if (! isset($definitions[$columnName])) {
+                return false;
+            }
+
+            if (($definitions[$columnName]->nullable ?? false) === true) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Compile a create table command.
      *
      * @param  \Illuminate\Database\Schema\Blueprint $blueprint
@@ -142,8 +204,14 @@ class Grammar extends BaseGrammar
      */
     public function compileCreate(Blueprint $blueprint, Fluent $command, $connection = null)
     {
-        $columns = $this->autoAddPrimaryKey($this->getColumns($blueprint));
+        $compiledColumns = $this->getColumns($blueprint);
+        $columns = $this->autoAddPrimaryKey($compiledColumns);
+        $hasInlinePrimaryKey = $this->columnsContainPrimaryKey($compiledColumns);
         $primaryColumns = $this->getPrimaryColumns($blueprint);
+
+        if (empty($primaryColumns) && ! $hasInlinePrimaryKey) {
+            $primaryColumns = $this->getPromotableUniqueColumns($blueprint);
+        }
 
         if (! empty($primaryColumns) && stripos($columns, 'PRIMARY KEY') === false) {
             $columns .= ', PRIMARY KEY ('.$this->columnize($primaryColumns).')';
@@ -205,6 +273,10 @@ class Grammar extends BaseGrammar
      */
     public function compileUnique(Blueprint $blueprint, Fluent $command)
     {
+        if ($blueprint->creating() && (array) $command->columns === $this->getPromotableUniqueColumns($blueprint)) {
+            return null;
+        }
+
         $columns = $this->columnize($command->columns);
         $table = $this->wrapTable($blueprint);
 
