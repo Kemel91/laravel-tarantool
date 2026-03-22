@@ -32,15 +32,15 @@ You can use Tarantool either as the main database, either as a side database. To
     'database' => env('DB_DATABASE'),
     'username' => env('DB_USERNAME'),
     'password' => env('DB_PASSWORD'),
-    'driver_oprions' => [
-        'connection_type'     => env('DB_CONNECTION_TYPE', 'tcp')
-    ],
+    'type'     => env('DB_CONNECTION_TYPE', 'tcp'),
     'options'  => [
         'connect_timeout' => 5,
         'max_retries' => 3
     ]
 ],
 ```
+
+The package also accepts `driver_options.connection_type` for backward compatibility, but `type` is the preferred option.
 
 Running tests with Docker Compose
 ---------------------------------

@@ -53,12 +53,53 @@ trait Dsn
             $host = $host.':'.$config['port'];
         }
 
-        $auth = $config['username'].':'.$config['password'];
+        $username = isset($config['username']) ? rawurlencode((string) $config['username']) : '';
+        $password = isset($config['password']) ? rawurlencode((string) $config['password']) : null;
+
+        $auth = '';
+
+        if ($username !== '') {
+            $auth = $username;
+
+            if ($password !== null) {
+                $auth .= ':'.$password;
+            }
+
+            $auth .= '@';
+        }
 
         $options = isset($config['options']) && ! empty($config['options']) ? http_build_query($config['options'], '', '&') : null;
 
-        $connType = isset($config['type']) && ! empty($config['type']) ? $config['type'] : 'tcp';
+        $connType = $this->getConnectionType($config);
 
-        return $connType.'://'.$auth.'@'.$host.($options ? '/?'.$options : '');
+        return $connType.'://'.$auth.$host.($options ? '/?'.$options : '');
+    }
+
+    /**
+     * Resolve the configured connection type.
+     *
+     * Supports the canonical `type` key as well as legacy nested driver options.
+     */
+    protected function getConnectionType(array $config): string
+    {
+        if (! empty($config['type'])) {
+            return $config['type'];
+        }
+
+        foreach (['driver_options', 'driver_oprions'] as $key) {
+            if (! isset($config[$key]) || ! is_array($config[$key])) {
+                continue;
+            }
+
+            if (! empty($config[$key]['type'])) {
+                return $config[$key]['type'];
+            }
+
+            if (! empty($config[$key]['connection_type'])) {
+                return $config[$key]['connection_type'];
+            }
+        }
+
+        return 'tcp';
     }
 }
