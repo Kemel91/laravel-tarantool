@@ -1,5 +1,5 @@
 {
-    "name": "chocofamilyme/laravel-tarantool",
+    "name": "kemel91/laravel-tarantool",
     "description": "A Tarantool based Eloquent ORM and Query builder for Laravel",
     "type": "library",
     "keywords": [
@@ -26,11 +26,11 @@
     "license": [
         "BSD-3-Clause"
     ],
-    "homepage": "https://github.com/chocofamilyme/laravel-tarantool",
+    "homepage": "https://github.com/Kemel91/laravel-tarantool",
     "authors": [
         {
-            "name": "IT Rahmet App",
-            "homepage": "https://rahmetapp.kz/"
+            "name": "Kemel91",
+            "homepage": "https://github.com/Kemel91"
         }
     ],
     "autoload": {
