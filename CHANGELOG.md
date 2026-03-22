@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.2] - 2026-03-23
+
+### Changed
+- Docker test environment now defaults to `tarantool/tarantool:latest`.
+- Connection configuration examples now document `sql_seq_scan`.
+
+### Fixed
+- Enabled `sql_seq_scan` at the Tarantool SQL session level by default to support Laravel migration repository queries on Tarantool 3.x.
+- Moved session setup to lazy initialization so connections no longer fail during early container startup.
+- Added regression coverage for `DatabaseMigrationRepository` queries against Tarantool `latest`.
+
 ## [2.0.0] - 2026-03-22
 
 ### Added

@@ -33,6 +33,7 @@ You can use Tarantool either as the main database, either as a side database. To
     'username' => env('DB_USERNAME'),
     'password' => env('DB_PASSWORD'),
     'type'     => env('DB_CONNECTION_TYPE', 'tcp'),
+    'sql_seq_scan' => env('DB_TT_SQL_SEQ_SCAN', true),
     'options'  => [
         'connect_timeout' => 5,
         'max_retries' => 3
@@ -41,6 +42,8 @@ You can use Tarantool either as the main database, either as a side database. To
 ```
 
 The package also accepts `driver_options.connection_type` for backward compatibility, but `type` is the preferred option.
+
+On Tarantool 3.x, SQL sequential scans are disabled by default. To keep Laravel's migration repository and other framework queries working as expected, the package enables `sql_seq_scan` for each connection by default. You can disable this behavior with `'sql_seq_scan' => false` if you want strict Tarantool scan checks.
 
 Running tests with Docker Compose
 ---------------------------------
@@ -51,6 +54,12 @@ Start Tarantool:
 
 ```bash
 docker compose up -d tarantool
+```
+
+Use a specific Tarantool image if needed:
+
+```bash
+TARANTOOL_IMAGE=tarantool/tarantool:2 docker compose up -d tarantool
 ```
 
 Run the full Laravel compatibility matrix:

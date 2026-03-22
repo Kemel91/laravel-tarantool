@@ -181,6 +181,8 @@ trait Query
      */
     private function runQuery(Client $client, string $sql, array $params, $operationType = '')
     {
+        $this->ensureSessionConfigured();
+
         if (! $operationType) {
             $operationType = $this->getSqlType($sql);
         }

@@ -23,6 +23,8 @@ class Connection extends BaseConnection
     /** @var TarantoolClient */
     protected $connection;
 
+    protected bool $sessionConfigured = false;
+
     /**
      * Create a new database connection instance.
      *
@@ -47,6 +49,50 @@ class Connection extends BaseConnection
     protected function createConnection(string $dsn)
     {
         return TarantoolClient::fromDsn($dsn);
+    }
+
+    /**
+     * Configure Tarantool SQL session settings for this connection.
+     */
+    public function ensureSessionConfigured(): void
+    {
+        if ($this->sessionConfigured) {
+            return;
+        }
+
+        $sqlSeqScan = $this->normalizeBooleanConfigValue(
+            $this->config['sql_seq_scan'] ?? true,
+            true
+        );
+
+        $this->getClient()->executeUpdate(sprintf(
+            'SET SESSION "sql_seq_scan" = %s',
+            $sqlSeqScan ? 'true' : 'false'
+        ));
+
+        $this->sessionConfigured = true;
+    }
+
+    /**
+     * Normalize bool-like config values coming from env-driven config.
+     */
+    protected function normalizeBooleanConfigValue(mixed $value, bool $default): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            $normalized = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+            return $normalized ?? $default;
+        }
+
+        if (is_int($value)) {
+            return $value !== 0;
+        }
+
+        return $default;
     }
 
     /**
@@ -110,6 +156,7 @@ class Connection extends BaseConnection
     public function setClient(TarantoolClient $connection): self
     {
         $this->connection = $connection;
+        $this->sessionConfigured = false;
 
         return $this;
     }

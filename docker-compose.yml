@@ -18,7 +18,7 @@ services:
         condition: service_started
 
   tarantool:
-    image: tarantool/tarantool:2
+    image: ${TARANTOOL_IMAGE:-tarantool/tarantool:latest}
     working_dir: /opt/tarantool
     command: ["tarantool", "/opt/tarantool/init.lua"]
     volumes:

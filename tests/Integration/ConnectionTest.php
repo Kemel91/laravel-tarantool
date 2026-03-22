@@ -11,6 +11,7 @@ use Illuminate\Contracts\Container\Container as ContainerContract;
 use Illuminate\Database\Connectors\ConnectionFactory;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Migrations\DatabaseMigrationRepository;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Support\Facades\Facade;
@@ -60,12 +61,12 @@ class ConnectionTest extends TestCase
         $provider->boot();
         Facade::setFacadeApplication($this->app);
 
-        $this->dropTables('users', 'password_reset_tokens', 'sessions');
+        $this->dropTables('users', 'password_reset_tokens', 'sessions', 'migrations');
     }
 
     protected function tearDown(): void
     {
-        $this->dropTables('users', 'password_reset_tokens', 'sessions');
+        $this->dropTables('users', 'password_reset_tokens', 'sessions', 'migrations');
         Facade::clearResolvedInstances();
         Facade::setFacadeApplication(null);
         Container::setInstance(null);
@@ -214,6 +215,25 @@ class ConnectionTest extends TestCase
         self::assertNotContains('users', $tablesAfterDown);
         self::assertNotContains('password_reset_tokens', $tablesAfterDown);
         self::assertNotContains('sessions', $tablesAfterDown);
+    }
+
+    public function test_migration_repository_queries_work_with_default_session_settings(): void
+    {
+        $repository = new DatabaseMigrationRepository($this->db, 'migrations');
+        $repository->createRepository();
+
+        self::assertSame([], $repository->getRan());
+
+        $repository->log('2026_03_22_000000_create_users_table', 1);
+        $repository->log('2026_03_22_000001_create_posts_table', 2);
+
+        self::assertSame(
+            [
+                '2026_03_22_000000_create_users_table',
+                '2026_03_22_000001_create_posts_table',
+            ],
+            $repository->getRan()
+        );
     }
 
     private function createBasicUsersTable(): void
