@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -eu
+
+for version in 11 12 13; do
+    echo "Running tests for Laravel ${version}"
+    sh bin/test-laravel "${version}"
+done

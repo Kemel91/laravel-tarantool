@@ -1,23 +1,25 @@
-name: PHP Composer
+name: Compatibility
 
-on: [push]
+on:
+  push:
+  pull_request:
 
 jobs:
-  build:
-
+  tests:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        laravel: [11, 12, 13]
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
 
-      - name: Validate composer.json and composer.lock
-        run: composer validate
+      - name: Validate composer.json
+        run: docker run --rm -v "$PWD":/app -w /app composer:2 composer validate
 
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-suggest
+      - name: Start Tarantool
+        run: docker compose up -d tarantool
 
-      - name: Run phpcs
-        run: composer run-script test:style
-
-      - name: Run psalm
-        run: composer run-script test:psalm
+      - name: Run Laravel ${{ matrix.laravel }} integration tests
+        run: docker compose run --rm php sh bin/test-laravel ${{ matrix.laravel }}

@@ -1,0 +1,25 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      COMPOSER_CACHE_DIR: /tmp/composer-cache
+      TARANTOOL_HOST: tarantool
+      TARANTOOL_PORT: 3301
+      TARANTOOL_USER: app
+      TARANTOOL_PASSWORD: secret
+      TARANTOOL_DATABASE: default
+    depends_on:
+      tarantool:
+        condition: service_started
+
+  tarantool:
+    image: tarantool/tarantool:2
+    working_dir: /opt/tarantool
+    command: ["tarantool", "/opt/tarantool/init.lua"]
+    volumes:
+      - ./docker/tarantool/init.lua:/opt/tarantool/init.lua:ro

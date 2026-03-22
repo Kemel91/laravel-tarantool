@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    bootstrap="vendor/autoload.php"
+    cacheDirectory=".phpunit.cache"
+    colors="true"
+>
+    <testsuites>
+        <testsuite name="Package">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <env name="TARANTOOL_HOST" value="127.0.0.1"/>
+        <env name="TARANTOOL_PORT" value="3301"/>
+        <env name="TARANTOOL_USER" value="app"/>
+        <env name="TARANTOOL_PASSWORD" value="secret"/>
+        <env name="TARANTOOL_DATABASE" value="default"/>
+    </php>
+</phpunit>

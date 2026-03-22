@@ -8,10 +8,9 @@ Installation
 
 Laravel  | Package
 :---------|:----------
- 5.8.x    | 0.1.9
- 6.x      | 0.1.9
- 7.x      | 0.1.9
- 8.x      | 1.x
+ 11.x     | 2.x
+ 12.x     | 2.x
+ 13.x     | 2.x
 
 
 #### Via Composer
@@ -41,6 +40,29 @@ You can use Tarantool either as the main database, either as a side database. To
         'max_retries' => 3
     ]
 ],
+```
+
+Running tests with Docker Compose
+---------------------------------
+
+The repository now includes a Docker-based test environment, so PHP and Tarantool do not need to be installed locally.
+
+Start Tarantool:
+
+```bash
+docker compose up -d tarantool
+```
+
+Run the full Laravel compatibility matrix:
+
+```bash
+docker compose run --rm --user "$(id -u):$(id -g)" php sh bin/test-matrix
+```
+
+Run tests for a single Laravel major version:
+
+```bash
+docker compose run --rm --user "$(id -u):$(id -g)" php sh bin/test-laravel 12
 ```
 
 Set tarantool as main database

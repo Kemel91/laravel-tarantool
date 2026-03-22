@@ -21,7 +21,7 @@ trait Query
      * @param  bool  $useReadPdo
      * @return array
      */
-    public function select($query, $bindings = [], $useReadPdo = false)
+    public function select($query, $bindings = [], $useReadPdo = false, array $fetchUsing = [])
     {
         /** @var SqlQueryResult $result */
         $result = $this->executeQuery($query, $bindings, $useReadPdo);
@@ -39,7 +39,12 @@ trait Query
      */
     public function insert($query, $bindings = [])
     {
-        return $this->executeQuery($query, $bindings);
+        /** @var SqlUpdateResult $result */
+        $result = $this->executeQuery($query, $bindings);
+
+        $this->recordsHaveBeenModified($result->count() > 0);
+
+        return true;
     }
 
     /**
@@ -52,7 +57,12 @@ trait Query
      */
     public function update($query, $bindings = [])
     {
-        return $this->executeQuery($query, $bindings);
+        /** @var SqlUpdateResult $result */
+        $result = $this->executeQuery($query, $bindings);
+
+        $this->recordsHaveBeenModified($result->count() > 0);
+
+        return $result->count();
     }
 
     /**
@@ -64,10 +74,32 @@ trait Query
      */
     public function delete($query, $bindings = [])
     {
-        /** @var SqlQueryResult $result */
+        /** @var SqlUpdateResult $result */
         $result = $this->executeQuery($query, $bindings);
 
-        return (int) ($result->count() !== 0);
+        $this->recordsHaveBeenModified($result->count() > 0);
+
+        return $result->count();
+    }
+
+    /**
+     * Execute an SQL statement and return the boolean result.
+     *
+     * @param  string  $query
+     * @param  array  $bindings
+     * @return bool
+     */
+    public function statement($query, $bindings = [])
+    {
+        $result = $this->executeQuery($query, $bindings);
+
+        if ($result instanceof SqlUpdateResult) {
+            $this->recordsHaveBeenModified($result->count() > 0);
+        } elseif ($result instanceof SqlQueryResult) {
+            $this->recordsHaveBeenModified($result->count() > 0);
+        }
+
+        return true;
     }
 
     /**
@@ -103,15 +135,14 @@ trait Query
      */
     public function executeQuery(string $query, array $bindings, bool $useReadPdo = false)
     {
-        $class = $this;
         $client = $this->getClient();
 
-        return $this->run($query, $bindings, function ($query, $bindings) use ($class, $client) {
+        return $this->run($query, $bindings, function ($query, $bindings) use ($client) {
             if ($this->pretending()) {
                 return [];
             }
 
-            return $class->runQuery($client, $query, $bindings);
+            return $this->runQuery($client, $query, $bindings);
         });
     }
 
@@ -127,18 +158,12 @@ trait Query
      */
     protected function runQueryCallback($query, $bindings, Closure $callback)
     {
-        // To execute the statement, we'll simply call the callback, which will actually
-        // run the SQL against the PDO connection. Then we can calculate the time it
-        // took to execute and log the query SQL, bindings and time in our memory.
         try {
-            $result = $this->runQuery($this->getClient(), $query, $bindings);
+            $result = $callback($query, $bindings);
         }
-        // If an exception occurs when attempting to run a query, we'll format the error
-        // message to include the bindings with SQL, which will make this exception a
-        // lot more helpful to the developer instead of just the database's errors.
         catch (Exception $e) {
             throw new QueryException(
-                $query, $this->prepareBindings($bindings), $e
+                $this->getName(), $query, $this->prepareBindings($bindings), $e
             );
         }
 

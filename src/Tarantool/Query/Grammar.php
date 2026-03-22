@@ -43,7 +43,7 @@ class Grammar extends BaseGrammar
                 if ($key == 0) {
                     return $this->wrapTable($segment);
                 } else {
-                    return strtoupper($this->addQuotes($segment));
+                    return $this->addQuotes($segment);
                 }
             } else {
                 return $this->wrapValue($segment);
@@ -63,11 +63,7 @@ class Grammar extends BaseGrammar
             return $value;
         }
 
-        if (in_array($value, $this->reservedWords)) {
-            return $this->addQuotes($value);
-        }
-
-        return str_replace('"', '""', $value);
+        return $this->addQuotes($value);
     }
 
     protected function addQuotes(string $string): string
@@ -85,12 +81,13 @@ class Grammar extends BaseGrammar
      * @param  string  $value
      * @return string
      */
-    public function wrapTable($value)
+    public function wrapTable($value, $prefix = null)
     {
         if ($this->isExpression($value)) {
-            return parent::wrapTable($value);
+            return parent::wrapTable($value, $prefix);
         }
-        return '"'.str_replace('"', '""', strtoupper($value)).'"';
+
+        return strtoupper(parent::wrapTable($value, $prefix));
     }
 
     /**

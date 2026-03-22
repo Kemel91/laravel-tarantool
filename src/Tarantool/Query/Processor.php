@@ -22,7 +22,7 @@ class Processor extends BaseProcessor
     public function processInsertGetId(Builder $query, $sql, $values, $sequence = null)
     {
         /** @var SqlUpdateResult $result */
-        $result = $query->getConnection()->insert($sql, $values);
+        $result = $query->getConnection()->executeQuery($sql, $values);
         $id = $result->getAutoincrementIds()[0];
 
         return is_numeric($id) ? (int) $id : $id;

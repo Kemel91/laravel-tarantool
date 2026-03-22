@@ -11,17 +11,17 @@
         "orm"
     ],
     "require": {
-        "php": "^7.3|^8.0",
-        "illuminate/support": "^8.0",
-        "illuminate/container": "^8.0",
-        "illuminate/database": "^8.0",
-        "illuminate/events": "^8.0",
-        "rybakit/msgpack": "^0.7",
-        "tarantool/client": "^0.9.0"
+        "php": "^8.2",
+        "illuminate/support": "^11.0 || ^12.0 || ^13.0",
+        "illuminate/container": "^11.0 || ^12.0 || ^13.0",
+        "illuminate/database": "^11.0 || ^12.0 || ^13.0",
+        "illuminate/events": "^11.0 || ^12.0 || ^13.0",
+        "rybakit/msgpack": "^0.7 || ^0.9",
+        "tarantool/client": "^0.9.0 || ^0.10.0"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^2.16",
-        "vimeo/psalm": "^4.1.0"
+        "friendsofphp/php-cs-fixer": "^3.75",
+        "phpunit/phpunit": "^11.5 || ^12.0 || ^13.0"
     },
     "license": [
         "BSD-3-Clause"
@@ -38,6 +38,11 @@
             "Chocofamily\\Tarantool\\": "src/Tarantool/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Chocofamily\\Tarantool\\Tests\\": "tests/"
+        }
+    },
     "extra": {
         "laravel": {
             "providers": [
@@ -47,10 +52,9 @@
     },
     "scripts": {
         "test": [
-            "@test:style",
-            "@test:psalm"
+            "@test:unit"
         ],
-        "test:style": "@php vendor/bin/php-cs-fixer",
-        "test:psalm": "@php vendor/bin/psalm"
+        "test:style": "@php vendor/bin/php-cs-fixer fix --dry-run --diff",
+        "test:unit": "@php vendor/bin/phpunit"
     }
 }

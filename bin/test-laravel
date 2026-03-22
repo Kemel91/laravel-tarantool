@@ -1,0 +1,21 @@
+#!/bin/sh
+
+set -eu
+
+version="${1:-}"
+
+if [ -z "$version" ]; then
+    echo "Usage: sh bin/test-laravel <laravel-major-version>" >&2
+    exit 1
+fi
+
+composer update \
+    --prefer-dist \
+    --no-interaction \
+    --with-all-dependencies \
+    --with "illuminate/support:^${version}.0" \
+    --with "illuminate/container:^${version}.0" \
+    --with "illuminate/database:^${version}.0" \
+    --with "illuminate/events:^${version}.0"
+
+vendor/bin/phpunit

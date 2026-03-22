@@ -30,16 +30,12 @@ class Connection extends BaseConnection
      */
     public function __construct(array $config)
     {
-        $this->config = $config;
+        parent::__construct(null, $config['database'] ?? '', $config['prefix'] ?? '', $config);
+
         $dsn = $this->getDsn($config);
-
-        $connection = $this->createConnection($dsn);
-
-        $this->setClient($connection);
-
-        $this->useDefaultPostProcessor();
         $this->useDefaultSchemaGrammar();
-        $this->useDefaultQueryGrammar();
+
+        $this->setClient($this->createConnection($dsn));
     }
 
     /**
@@ -62,7 +58,7 @@ class Connection extends BaseConnection
      */
     public function table($table, $as = null)
     {
-        return $this->query()->from($table);
+        return $this->query()->from($table, $as);
     }
 
     /**
@@ -72,11 +68,10 @@ class Connection extends BaseConnection
      * @return \Generator
      * @throws \Exception
      */
-    public function cursor($query, $bindings = [], $useReadPdo = true)
+    public function cursor($query, $bindings = [], $useReadPdo = true, array $fetchUsing = [])
     {
         /** @var SqlQueryResult $queryResult */
-        $queryResult = $this->run($query, $bindings, function () {
-        });
+        $queryResult = $this->executeQuery($query, $bindings, $useReadPdo);
 
         $metaData = $queryResult->getMetadata();
 
@@ -96,7 +91,7 @@ class Connection extends BaseConnection
      */
     public function query()
     {
-        return new Builder($this, $this->getDefaultQueryGrammar(), $this->getDefaultPostProcessor());
+        return new Builder($this, $this->getQueryGrammar(), $this->getPostProcessor());
     }
 
     /**
@@ -158,7 +153,7 @@ class Connection extends BaseConnection
      */
     protected function getDefaultQueryGrammar()
     {
-        return new QGrammar();
+        return (new QGrammar($this))->setTablePrefix($this->tablePrefix);
     }
 
     /**
@@ -166,6 +161,6 @@ class Connection extends BaseConnection
      */
     protected function getDefaultSchemaGrammar()
     {
-        return new SGrammar();
+        return (new SGrammar($this))->setTablePrefix($this->tablePrefix);
     }
 }

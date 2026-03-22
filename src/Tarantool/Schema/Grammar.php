@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Chocofamily\Tarantool\Schema;
 
-use Chocofamily\Tarantool\Connection;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\Grammars\Grammar as BaseGrammar;
 use Illuminate\Support\Fluent;
@@ -31,9 +30,9 @@ class Grammar extends BaseGrammar
      * @param mixed $table
      * @return string
      */
-    public function wrapTable($table)
+    public function wrapTable($table, $prefix = null)
     {
-        $value = parent::wrapTable($table);
+        $value = parent::wrapTable($table, $prefix);
 
         return strtoupper($value);
     }
@@ -43,9 +42,20 @@ class Grammar extends BaseGrammar
      *
      * @return string
      */
-    public function compileTableExists()
+    public function compileTableExists($schema, $table)
     {
         return 'select * from "_space" where "name" = ?';
+    }
+
+    /**
+     * Compile the query to determine the tables.
+     *
+     * @param  string|string[]|null  $schema
+     * @return string
+     */
+    public function compileTables($schema = null)
+    {
+        return 'select "name" from "_space" where "name" not like \'_%\'';
     }
 
     /**
@@ -106,10 +116,9 @@ class Grammar extends BaseGrammar
      *
      * @param  \Illuminate\Database\Schema\Blueprint $blueprint
      * @param  \Illuminate\Support\Fluent $command
-     * @param Connection $connection
      * @return string
      */
-    public function compileCreate(Blueprint $blueprint, Fluent $command, Connection $connection)
+    public function compileCreate(Blueprint $blueprint, Fluent $command, $connection = null)
     {
         $columns = $this->autoAddPrimaryKey($this->getColumns($blueprint));
         $sql = 'CREATE TABLE IF NOT EXISTS '.$this->wrapTable($blueprint)." ($columns)";
