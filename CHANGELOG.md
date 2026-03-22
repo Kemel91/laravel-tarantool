@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.6] - 2026-03-23
+
+### Fixed
+- Query bindings are now passed through Laravel's `prepareBindings()` before execution.
+- `DateTimeInterface` values such as `DateTimeImmutable` are now converted to SQL date strings before being sent to Tarantool.
+- Added regression coverage for bulk inserts with timestamp bindings, such as Laravel seeders using `created_at` and `updated_at`.
+
 ## [2.0.5] - 2026-03-23
 
 ### Fixed

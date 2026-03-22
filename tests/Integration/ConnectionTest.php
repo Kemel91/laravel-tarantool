@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Chocofamily\Tarantool\Tests\Integration;
 
+use DateTimeImmutable;
 use Chocofamily\Tarantool\ServiceProvider;
 use Chocofamily\Tarantool\Tests\Fixtures\User;
 use Illuminate\Container\Container;
@@ -62,12 +63,12 @@ class ConnectionTest extends TestCase
         $provider->boot();
         Facade::setFacadeApplication($this->app);
 
-        $this->dropTables('npc_dialogs', 'players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'npcs', 'users', 'locations');
+        $this->dropTables('npc_dialogs', 'skills', 'players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'npcs', 'users', 'locations');
     }
 
     protected function tearDown(): void
     {
-        $this->dropTables('npc_dialogs', 'players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'npcs', 'users', 'locations');
+        $this->dropTables('npc_dialogs', 'skills', 'players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'npcs', 'users', 'locations');
         Facade::clearResolvedInstances();
         Facade::setFacadeApplication(null);
         Container::setInstance(null);
@@ -379,6 +380,37 @@ class ConnectionTest extends TestCase
 
         self::assertIsInt($dialogId);
         self::assertSame('{"hello":"world"}', $connection->table('npc_dialogs')->where('id', $dialogId)->value('json'));
+    }
+
+    public function test_datetime_bindings_are_prepared_for_bulk_insert(): void
+    {
+        $connection = $this->db->connection('tarantool');
+
+        $connection->getSchemaBuilder()->create('skills', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name')->unique();
+            $table->string('title');
+            $table->timestamps();
+        });
+
+        $timestamp = new DateTimeImmutable('2026-03-23 00:00:00');
+
+        self::assertTrue($connection->table('skills')->insert([
+            [
+                'name' => 'str',
+                'title' => 'Strength',
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ],
+            [
+                'name' => 'dex',
+                'title' => 'Dexterity',
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ],
+        ]));
+
+        self::assertSame(2, $connection->table('skills')->count());
     }
 
     private function createBasicUsersTable(): void
