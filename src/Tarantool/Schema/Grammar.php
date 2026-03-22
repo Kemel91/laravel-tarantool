@@ -384,10 +384,58 @@ class Grammar extends BaseGrammar
     protected function modifyDefault(Blueprint $blueprint, Fluent $column)
     {
         if (! is_null($column->default)) {
-            return ' default '.$this->getDefaultValue($column->default);
+            return ' default '.$this->formatDefaultValue($column);
         }
 
         return null;
+    }
+
+    /**
+     * Format a default literal for Tarantool column types.
+     */
+    protected function formatDefaultValue(Fluent $column): string
+    {
+        $value = $column->default;
+
+        if ($value instanceof \Illuminate\Contracts\Database\Query\Expression) {
+            return $this->getValue($value);
+        }
+
+        if ($this->isNumericColumnType($column->type) && is_numeric($value)) {
+            return (string) $value;
+        }
+
+        if ($column->type === 'boolean') {
+            $normalized = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+            if ($normalized !== null) {
+                return $normalized ? 'true' : 'false';
+            }
+        }
+
+        return $this->getDefaultValue($value);
+    }
+
+    /**
+     * Determine whether the column type expects an unquoted numeric default.
+     */
+    protected function isNumericColumnType(string $type): bool
+    {
+        return in_array($type, [
+            'integer',
+            'bigInteger',
+            'mediumInteger',
+            'smallInteger',
+            'tinyInteger',
+            'unsignedInteger',
+            'unsignedBigInteger',
+            'unsignedMediumInteger',
+            'unsignedSmallInteger',
+            'unsignedTinyInteger',
+            'float',
+            'double',
+            'decimal',
+        ], true);
     }
 
     /**

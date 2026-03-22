@@ -62,12 +62,12 @@ class ConnectionTest extends TestCase
         $provider->boot();
         Facade::setFacadeApplication($this->app);
 
-        $this->dropTables('users', 'password_reset_tokens', 'sessions', 'migrations', 'location_transitions', 'locations');
+        $this->dropTables('players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'users', 'locations');
     }
 
     protected function tearDown(): void
     {
-        $this->dropTables('users', 'password_reset_tokens', 'sessions', 'migrations', 'location_transitions', 'locations');
+        $this->dropTables('players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'users', 'locations');
         Facade::clearResolvedInstances();
         Facade::setFacadeApplication(null);
         Container::setInstance(null);
@@ -282,6 +282,62 @@ class ConnectionTest extends TestCase
             'to_location_id' => $toLocationId,
             'transition_name' => 'move-again',
         ]);
+    }
+
+    public function test_numeric_defaults_are_not_quoted_in_schema_creation(): void
+    {
+        $connection = $this->db->connection('tarantool');
+
+        $connection->getSchemaBuilder()->create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+        });
+
+        $connection->getSchemaBuilder()->create('locations', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+        });
+
+        $migration = new class extends Migration
+        {
+            public function up(): void
+            {
+                Schema::create('players', function (Blueprint $table): void {
+                    $table->id();
+                    $table->string('name')->unique();
+                    $table->foreignId('user_id')->index()->constrained('users');
+                    $table->foreignId('location_id')->index()->constrained('locations');
+                    $table->unsignedSmallInteger('life')->default(0);
+                    $table->unsignedSmallInteger('life_max')->default(0);
+                    $table->unsignedSmallInteger('mana')->default(0);
+                    $table->unsignedSmallInteger('mana_max')->default(0);
+                    $table->unsignedInteger('experience')->default(0);
+                    $table->unsignedSmallInteger('level')->default(1);
+                    $table->timestamps();
+                });
+            }
+
+            public function down(): void
+            {
+                Schema::dropIfExists('players');
+            }
+        };
+
+        $migration->up();
+
+        $userId = $connection->table('users')->insertGetId(['name' => 'Owner']);
+        $locationId = $connection->table('locations')->insertGetId(['name' => 'Spawn']);
+        $playerId = $connection->table('players')->insertGetId([
+            'name' => 'Hero',
+            'user_id' => $userId,
+            'location_id' => $locationId,
+            'created_at' => '2026-03-23 00:00:00',
+            'updated_at' => '2026-03-23 00:00:00',
+        ]);
+
+        self::assertIsInt($playerId);
+        self::assertSame(0, $connection->table('players')->where('id', $playerId)->value('life'));
+        self::assertSame(1, $connection->table('players')->where('id', $playerId)->value('level'));
     }
 
     private function createBasicUsersTable(): void

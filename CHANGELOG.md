@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.4] - 2026-03-23
+
+### Fixed
+- Numeric default values for Tarantool integer and number columns are now emitted without string quotes.
+- Added regression coverage for Laravel migrations that use `unsignedSmallInteger`, `unsignedInteger`, `default(0/1)`, `timestamps()`, and foreign keys together.
+- Fixed integration test cleanup ordering for foreign-key-dependent tables.
+
 ## [2.0.3] - 2026-03-23
 
 ### Fixed
