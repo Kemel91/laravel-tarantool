@@ -55,7 +55,7 @@ class Grammar extends BaseGrammar
      */
     public function compileTables($schema = null)
     {
-        return 'select "name" from "_space" where "name" not like \'_%\'';
+        return 'select "name" from "_space" where substr("name", 1, 1) != \'_\'';
     }
 
     /**
@@ -94,6 +94,12 @@ class Grammar extends BaseGrammar
             }
 
             if (is_int($idColumnIndex) and $idColumnIndex !== false) {
+                $isIntegerIdColumn = strripos($columns[$idColumnIndex], 'INTEGER') !== false;
+
+                if (! $isIntegerIdColumn) {
+                    return implode(', ', $columns);
+                }
+
                 $textToAdd = '';
 
                 if ($primaryKeyExist === false) {
@@ -112,6 +118,22 @@ class Grammar extends BaseGrammar
     }
 
     /**
+     * Get the primary key columns declared on the blueprint.
+     *
+     * @return array
+     */
+    private function getPrimaryColumns(Blueprint $blueprint): array
+    {
+        foreach ($blueprint->getCommands() as $command) {
+            if ($command->name === 'primary') {
+                return (array) $command->columns;
+            }
+        }
+
+        return [];
+    }
+
+    /**
      * Compile a create table command.
      *
      * @param  \Illuminate\Database\Schema\Blueprint $blueprint
@@ -121,6 +143,12 @@ class Grammar extends BaseGrammar
     public function compileCreate(Blueprint $blueprint, Fluent $command, $connection = null)
     {
         $columns = $this->autoAddPrimaryKey($this->getColumns($blueprint));
+        $primaryColumns = $this->getPrimaryColumns($blueprint);
+
+        if (! empty($primaryColumns) && stripos($columns, 'PRIMARY KEY') === false) {
+            $columns .= ', PRIMARY KEY ('.$this->columnize($primaryColumns).')';
+        }
+
         $sql = 'CREATE TABLE IF NOT EXISTS '.$this->wrapTable($blueprint)." ($columns)";
 
         return $sql;
@@ -139,6 +167,18 @@ class Grammar extends BaseGrammar
     }
 
     /**
+     * Compile a drop table (if exists) command.
+     *
+     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Illuminate\Support\Fluent  $command
+     * @return string
+     */
+    public function compileDropIfExists(Blueprint $blueprint, Fluent $command)
+    {
+        return 'drop table if exists '.$this->wrapTable($blueprint);
+    }
+
+    /**
      * Compile a primary key command.
      *
      * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
@@ -147,6 +187,10 @@ class Grammar extends BaseGrammar
      */
     public function compilePrimary(Blueprint $blueprint, Fluent $command)
     {
+        if ($blueprint->creating()) {
+            return null;
+        }
+
         $command->name(null);
 
         return $this->compileKey($blueprint, $command, 'PRIMARY KEY');
