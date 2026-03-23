@@ -28,9 +28,10 @@ class Grammar extends BaseGrammar
      * Wrap a single string in keyword identifiers.
      *
      * @param mixed $table
+     * @param null $prefix
      * @return string
      */
-    public function wrapTable($table, $prefix = null)
+    public function wrapTable($table, $prefix = null): string
     {
         $value = parent::wrapTable($table, $prefix);
 
@@ -42,9 +43,9 @@ class Grammar extends BaseGrammar
      *
      * @return string
      */
-    public function compileTableExists($schema, $table)
+    public function compileTableExists($schema, $table): string
     {
-        return 'select * from "_space" where "name" = ?';
+        return 'select * from "_space" where upper("name") = upper(?)';
     }
 
     /**
@@ -53,7 +54,7 @@ class Grammar extends BaseGrammar
      * @param  string|string[]|null  $schema
      * @return string
      */
-    public function compileTables($schema = null)
+    public function compileTables($schema = null): string
     {
         return 'select "name" from "_space" where substr("name", 1, 1) != \'_\'';
     }
@@ -241,7 +242,7 @@ class Grammar extends BaseGrammar
      * @param  \Illuminate\Support\Fluent  $command
      * @return string
      */
-    public function compileDropIfExists(Blueprint $blueprint, Fluent $command)
+    public function compileDropIfExists(Blueprint $blueprint, Fluent $command): string
     {
         return 'drop table if exists '.$this->wrapTable($blueprint);
     }

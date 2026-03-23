@@ -224,6 +224,8 @@ class ConnectionTest extends TestCase
         $repository = new DatabaseMigrationRepository($this->db, 'migrations');
         $repository->createRepository();
 
+        self::assertTrue($repository->repositoryExists());
+
         self::assertSame([], $repository->getRan());
 
         $repository->log('2026_03_22_000000_create_users_table', 1);
