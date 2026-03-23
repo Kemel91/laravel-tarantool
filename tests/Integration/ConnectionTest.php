@@ -111,6 +111,38 @@ class ConnectionTest extends TestCase
         self::assertSame(1, $connection->table('users')->count());
     }
 
+    public function test_numeric_string_bindings_are_coerced_for_common_queries(): void
+    {
+        $this->createBasicUsersTable();
+
+        $connection = $this->db->connection('tarantool');
+
+        $id = $connection->table('users')->insertGetId([
+            'name' => 'Alice',
+            'age' => '5',
+        ]);
+
+        self::assertIsInt($id);
+        self::assertSame(
+            5,
+            User::query()->findOrFail((string) $id)->age
+        );
+
+        self::assertSame(
+            1,
+            $connection->table('users')->where('id', (string) $id)->update([
+                'age' => '6',
+            ])
+        );
+        self::assertSame(6, $connection->table('users')->where('id', $id)->value('age'));
+
+        self::assertSame(
+            1,
+            $connection->table('users')->where('id', (string) $id)->delete()
+        );
+        self::assertSame(0, $connection->table('users')->count());
+    }
+
     public function test_eloquent_models_use_the_tarantool_connection(): void
     {
         $this->createBasicUsersTable();

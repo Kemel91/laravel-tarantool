@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.15] - 2026-03-24
+
+### Fixed
+- Added numeric string coercion in `prepareBindings()` so strict Tarantool SQL comparisons work with common Laravel inputs such as route parameters and request data.
+- Fixed `find((string) $id)`, `where('id', '1')`, and similar queries on integer columns.
+- Added regression coverage for `insert`, `select`, `update`, and `delete` queries that receive numeric strings for integer bindings.
+
 ## [2.0.14] - 2026-03-24
 
 ### Fixed

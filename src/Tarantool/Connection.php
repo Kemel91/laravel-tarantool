@@ -95,6 +95,49 @@ class Connection extends BaseConnection
     }
 
     /**
+     * Prepare the query bindings for execution.
+     */
+    public function prepareBindings(array $bindings): array
+    {
+        $bindings = parent::prepareBindings($bindings);
+
+        $shouldCoerceNumericStrings = $this->normalizeBooleanConfigValue(
+            $this->config['coerce_numeric_strings'] ?? true,
+            true
+        );
+
+        if (! $shouldCoerceNumericStrings) {
+            return $bindings;
+        }
+
+        array_walk_recursive($bindings, function (&$value): void {
+            $value = $this->normalizeBindingValue($value);
+        });
+
+        return $bindings;
+    }
+
+    /**
+     * Normalize binding values for Tarantool's strict SQL typing.
+     */
+    protected function normalizeBindingValue(mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        if (preg_match('/^-?(?:0|[1-9]\d*)$/', $value) === 1) {
+            return (int) $value;
+        }
+
+        if (preg_match('/^-?(?:0|[1-9]\d*)\.\d+$/', $value) === 1) {
+            return (float) $value;
+        }
+
+        return $value;
+    }
+
+    /**
      * Begin a fluent query against a database table.
      *
      * @param \Closure|\Illuminate\Database\Query\Builder|string $table
