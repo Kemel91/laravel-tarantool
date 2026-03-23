@@ -10,6 +10,7 @@ use Illuminate\Database\QueryException;
 use Tarantool\Client\Client;
 use Tarantool\Client\SqlQueryResult;
 use Tarantool\Client\SqlUpdateResult;
+use function array_change_key_case;
 
 trait Query
 {
@@ -203,10 +204,11 @@ trait Query
      */
     private function getDataWithKeys(SqlQueryResult $result) : array
     {
-        $data = iterator_to_array($result);
+        $data = [];
+        foreach ($result as $key => $value) {
+            $data[$key] = array_change_key_case($value);
+        }
 
-        return array_map(static function ($item) {
-            return array_change_key_case($item, CASE_LOWER);
-        }, $data);
+        return $data;
     }
 }
