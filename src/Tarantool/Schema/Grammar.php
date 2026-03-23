@@ -45,7 +45,10 @@ class Grammar extends BaseGrammar
      */
     public function compileTableExists($schema, $table): string
     {
-        return 'select * from "_space" where upper("name") = upper(?)';
+        return sprintf(
+            'select exists (select 1 from "_space" where upper("name") = upper(%s)) as "exists"',
+            $this->quoteString($table)
+        );
     }
 
     /**
