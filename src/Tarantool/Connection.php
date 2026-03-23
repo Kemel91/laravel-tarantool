@@ -20,8 +20,7 @@ class Connection extends BaseConnection
 {
     use Dsn, Query, Helper;
 
-    /** @var TarantoolClient */
-    protected $connection;
+    protected TarantoolClient $connection;
 
     protected bool $sessionConfigured = false;
 
@@ -46,7 +45,7 @@ class Connection extends BaseConnection
      * @param  string $dsn
      * @return TarantoolClient
      */
-    protected function createConnection(string $dsn)
+    protected function createConnection(string $dsn): TarantoolClient
     {
         return TarantoolClient::fromDsn($dsn);
     }
@@ -102,7 +101,7 @@ class Connection extends BaseConnection
      * @param string|null $as
      * @return \Illuminate\Database\Query\Builder
      */
-    public function table($table, $as = null)
+    public function table($table, $as = null): \Illuminate\Database\Query\Builder
     {
         return $this->query()->from($table, $as);
     }
@@ -143,7 +142,7 @@ class Connection extends BaseConnection
     /**
      * {@inheritdoc}
      */
-    public function getSchemaBuilder()
+    public function getSchemaBuilder(): SchemaBuilder
     {
         return new SchemaBuilder($this);
     }
@@ -166,7 +165,7 @@ class Connection extends BaseConnection
      *
      * @return TarantoolClient
      */
-    public function getClient()
+    public function getClient(): TarantoolClient
     {
         return $this->connection;
     }
@@ -182,7 +181,7 @@ class Connection extends BaseConnection
     /**
      * {@inheritdoc}
      */
-    public function getDriverName()
+    public function getDriverName(): string
     {
         return 'tarantool';
     }

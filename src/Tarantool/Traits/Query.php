@@ -10,6 +10,7 @@ use Illuminate\Database\QueryException;
 use Tarantool\Client\Client;
 use Tarantool\Client\SqlQueryResult;
 use Tarantool\Client\SqlUpdateResult;
+
 use function array_change_key_case;
 
 trait Query
@@ -17,12 +18,13 @@ trait Query
     /**
      * Run a select statement against the database.
      *
-     * @param  string  $query
-     * @param  array  $bindings
-     * @param  bool  $useReadPdo
+     * @param string $query
+     * @param array $bindings
+     * @param bool $useReadPdo
+     * @param array $fetchUsing
      * @return array
      */
-    public function select($query, $bindings = [], $useReadPdo = false, array $fetchUsing = [])
+    public function select($query, $bindings = [], $useReadPdo = false, array $fetchUsing = []): array
     {
         /** @var SqlQueryResult $result */
         $result = $this->executeQuery($query, $bindings, $useReadPdo);
@@ -73,7 +75,7 @@ trait Query
      * @param  array   $bindings
      * @return int
      */
-    public function delete($query, $bindings = [])
+    public function delete($query, $bindings = []): int
     {
         /** @var SqlUpdateResult $result */
         $result = $this->executeQuery($query, $bindings);

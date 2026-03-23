@@ -10,7 +10,7 @@ trait Dsn
      * @param  array $config
      * @return string
      */
-    protected function getDsn(array $config)
+    protected function getDsn(array $config): string
     {
         return $this->hasDsnString($config)
             ? $this->getDsnString($config)
@@ -23,9 +23,9 @@ trait Dsn
      * @param  array  $config
      * @return bool
      */
-    protected function hasDsnString(array $config)
+    protected function hasDsnString(array $config): bool
     {
-        return isset($config['dsn']) && ! empty($config['dsn']);
+        return ! empty($config['dsn']);
     }
 
     /**
@@ -34,7 +34,7 @@ trait Dsn
      * @param  array  $config
      * @return string
      */
-    protected function getDsnString(array $config)
+    protected function getDsnString(array $config): string
     {
         return $config['dsn'];
     }
@@ -49,7 +49,7 @@ trait Dsn
     {
         $host = $config['host'];
 
-        if (! empty($config['port']) && strpos($host, ':') === false) {
+        if (! empty($config['port']) && !str_contains($host, ':')) {
             $host = $host.':'.$config['port'];
         }
 
@@ -68,7 +68,7 @@ trait Dsn
             $auth .= '@';
         }
 
-        $options = isset($config['options']) && ! empty($config['options']) ? http_build_query($config['options'], '', '&') : null;
+        $options = ! empty($config['options']) ? http_build_query($config['options'], '', '&') : null;
 
         $connType = $this->getConnectionType($config);
 
@@ -86,17 +86,13 @@ trait Dsn
             return $config['type'];
         }
 
-        foreach (['driver_options', 'driver_oprions'] as $key) {
-            if (! isset($config[$key]) || ! is_array($config[$key])) {
-                continue;
+        $driverOptions = $config['driver_options'] ?? null;
+        if (is_array($driverOptions)) {
+            if (! empty($driverOptions['type'])) {
+                return $driverOptions['type'];
             }
-
-            if (! empty($config[$key]['type'])) {
-                return $config[$key]['type'];
-            }
-
-            if (! empty($config[$key]['connection_type'])) {
-                return $config[$key]['connection_type'];
+            if (! empty($driverOptions['connection_type'])) {
+                return $driverOptions['connection_type'];
             }
         }
 
