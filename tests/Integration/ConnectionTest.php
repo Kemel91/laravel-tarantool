@@ -480,6 +480,49 @@ class ConnectionTest extends TestCase
         self::assertSame(0, $connection->table('users')->count());
     }
 
+    public function test_schema_builder_can_retrieve_columns_and_indexes(): void
+    {
+        $connection = $this->db->connection('tarantool');
+        $schema = $connection->getSchemaBuilder();
+
+        $schema->create('locations', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+        });
+
+        $schema->create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->string('email')->unique();
+            $table->foreignId('location_id')->index()->constrained('locations');
+            $table->integer('age')->nullable()->default(0);
+        });
+
+        $columns = $schema->getColumns('users');
+        $columnNames = array_column($columns, 'name');
+
+        self::assertSame(['id', 'email', 'location_id', 'age'], $columnNames);
+        self::assertTrue($schema->hasColumn('users', 'email'));
+        self::assertSame($columnNames, $schema->getColumnListing('users'));
+
+        $idColumn = collect($columns)->firstWhere('name', 'id');
+        self::assertNotNull($idColumn);
+        self::assertTrue($idColumn['auto_increment']);
+        self::assertFalse($idColumn['nullable']);
+
+        $ageColumn = collect($columns)->firstWhere('name', 'age');
+        self::assertNotNull($ageColumn);
+        self::assertTrue($ageColumn['nullable']);
+        self::assertSame('0', $ageColumn['default']);
+
+        $indexes = $schema->getIndexes('users');
+
+        self::assertNotEmpty($indexes);
+        self::assertTrue((bool) collect($indexes)->firstWhere('primary', true));
+        self::assertSame(['id'], collect($indexes)->firstWhere('primary', true)['columns']);
+
+        self::assertIsArray($schema->getForeignKeys('users'));
+    }
+
     public function test_drop_all_tables_handles_foreign_key_dependencies(): void
     {
         $connection = $this->db->connection('tarantool');

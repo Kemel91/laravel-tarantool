@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.14] - 2026-03-24
+
+### Fixed
+- Added Tarantool schema introspection support for `getColumns()`, `getColumnListing()`, `hasColumn()`, and `getIndexes()` using system spaces.
+- Added autoincrement detection for schema introspection via `_space_sequence`.
+- Prevented unsupported-driver exceptions for `getForeignKeys()` by returning an empty list when Tarantool SQL metadata is not exposed through the current client path.
+- Added regression coverage for schema builder introspection across Laravel 11, 12, and 13.
+
 ## [2.0.13] - 2026-03-24
 
 ### Fixed
