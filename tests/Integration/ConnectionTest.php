@@ -63,12 +63,12 @@ class ConnectionTest extends TestCase
         $provider->boot();
         Facade::setFacadeApplication($this->app);
 
-        $this->dropTables('npc_dialogs', 'skills', 'players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'npcs', 'users', 'locations');
+        $this->dropTables('item_attributes', 'npc_dialogs', 'skills', 'players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'npcs', 'users', 'locations');
     }
 
     protected function tearDown(): void
     {
-        $this->dropTables('npc_dialogs', 'skills', 'players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'npcs', 'users', 'locations');
+        $this->dropTables('item_attributes', 'npc_dialogs', 'skills', 'players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'npcs', 'users', 'locations');
         Facade::clearResolvedInstances();
         Facade::setFacadeApplication(null);
         Container::setInstance(null);
@@ -119,7 +119,7 @@ class ConnectionTest extends TestCase
 
         $id = $connection->table('users')->insertGetId([
             'name' => 'Alice',
-            'age' => '5',
+            'age' => 5,
         ]);
 
         self::assertIsInt($id);
@@ -131,7 +131,7 @@ class ConnectionTest extends TestCase
         self::assertSame(
             1,
             $connection->table('users')->where('id', (string) $id)->update([
-                'age' => '6',
+                'age' => 6,
             ])
         );
         self::assertSame(6, $connection->table('users')->where('id', $id)->value('age'));
@@ -141,6 +141,29 @@ class ConnectionTest extends TestCase
             $connection->table('users')->where('id', (string) $id)->delete()
         );
         self::assertSame(0, $connection->table('users')->count());
+    }
+
+    public function test_numeric_string_insert_values_are_preserved_for_string_columns(): void
+    {
+        $connection = $this->db->connection('tarantool');
+
+        $connection->getSchemaBuilder()->create('item_attributes', function (Blueprint $table): void {
+            $table->id();
+            $table->string('attribute');
+            $table->unsignedInteger('item_id');
+            $table->string('value');
+        });
+
+        self::assertTrue($connection->table('item_attributes')->insert([
+            'attribute' => 'armor',
+            'item_id' => 377,
+            'value' => '5',
+        ]));
+
+        self::assertSame(
+            '5',
+            $connection->table('item_attributes')->where('item_id', 377)->value('value')
+        );
     }
 
     public function test_eloquent_models_use_the_tarantool_connection(): void

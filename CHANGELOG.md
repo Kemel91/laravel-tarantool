@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.16] - 2026-03-24
+
+### Fixed
+- Narrowed numeric string coercion so it applies to `SELECT`, `DELETE`, and `UPDATE` predicate bindings, but no longer rewrites `INSERT` values or `UPDATE ... SET` values.
+- Fixed the `2.0.15` regression where string columns such as `value = '5'` could be sent to Tarantool as integers during inserts.
+- Added regression coverage to preserve numeric strings for string columns while keeping `find((string) $id)` and `where('id', '1')` working on integer keys.
+
 ## [2.0.15] - 2026-03-24
 
 ### Fixed

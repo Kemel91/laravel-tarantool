@@ -139,7 +139,10 @@ trait Query
     public function executeQuery(string $query, array $bindings, bool $useReadPdo = false)
     {
         $client = $this->getClient();
-        $preparedBindings = $this->prepareBindings($bindings);
+        $preparedBindings = $this->normalizePreparedBindingsForQuery(
+            $query,
+            $this->prepareBindings($bindings)
+        );
 
         return $this->run($query, $bindings, function ($query, $bindings) use ($client, $preparedBindings) {
             if ($this->pretending()) {

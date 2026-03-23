@@ -99,28 +99,77 @@ class Connection extends BaseConnection
      */
     public function prepareBindings(array $bindings): array
     {
-        $bindings = parent::prepareBindings($bindings);
+        return parent::prepareBindings($bindings);
+    }
 
+    /**
+     * Normalize prepared bindings for Tarantool's strict SQL typing.
+     */
+    public function normalizePreparedBindingsForQuery(string $query, array $bindings): array
+    {
         $shouldCoerceNumericStrings = $this->normalizeBooleanConfigValue(
             $this->config['coerce_numeric_strings'] ?? true,
             true
         );
 
-        if (! $shouldCoerceNumericStrings) {
+        if (! $shouldCoerceNumericStrings || $bindings === []) {
             return $bindings;
         }
 
+        return match ($this->getSqlType($query)) {
+            'SELECT', 'DELETE' => $this->coerceNumericStrings($bindings),
+            'UPDATE' => $this->coerceNumericStringsAfterOffset(
+                $bindings,
+                $this->countUpdateValueBindings($query)
+            ),
+            default => $bindings,
+        };
+    }
+
+    /**
+     * Count bindings that belong to the SET clause of an UPDATE statement.
+     */
+    protected function countUpdateValueBindings(string $query): int
+    {
+        if (preg_match('/\bset\b(.*?)(?:\bwhere\b|\border\b|\blimit\b|$)/is', $query, $matches) !== 1) {
+            return 0;
+        }
+
+        return substr_count($matches[1], '?');
+    }
+
+    /**
+     * Coerce numeric strings in all bindings.
+     */
+    protected function coerceNumericStrings(array $bindings): array
+    {
         array_walk_recursive($bindings, function (&$value): void {
-            $value = $this->normalizeBindingValue($value);
+            $value = $this->coerceNumericStringValue($value);
         });
 
         return $bindings;
     }
 
     /**
-     * Normalize binding values for Tarantool's strict SQL typing.
+     * Coerce numeric strings in bindings after a fixed offset.
      */
-    protected function normalizeBindingValue(mixed $value): mixed
+    protected function coerceNumericStringsAfterOffset(array $bindings, int $offset): array
+    {
+        foreach ($bindings as $index => $value) {
+            if ($index < $offset) {
+                continue;
+            }
+
+            $bindings[$index] = $this->coerceNumericStringValue($value);
+        }
+
+        return $bindings;
+    }
+
+    /**
+     * Normalize a scalar binding value for strict Tarantool comparisons.
+     */
+    protected function coerceNumericStringValue(mixed $value): mixed
     {
         if (! is_string($value)) {
             return $value;
