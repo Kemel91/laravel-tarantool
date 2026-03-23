@@ -415,6 +415,71 @@ class ConnectionTest extends TestCase
         self::assertSame(2, $connection->table('skills')->count());
     }
 
+    public function test_eloquent_update_with_timestamps_does_not_qualify_set_columns(): void
+    {
+        $connection = $this->db->connection('tarantool');
+
+        $connection->getSchemaBuilder()->create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->string('email_verification_token')->nullable();
+            $table->timestamps();
+        });
+
+        $userId = $connection->table('users')->insertGetId([
+            'name' => 'Alice',
+            'email_verification_token' => null,
+            'created_at' => '2026-03-24 00:00:00',
+            'updated_at' => '2026-03-24 00:00:00',
+        ]);
+
+        $user = User::query()->findOrFail($userId);
+        $user->timestamps = true;
+        $user->email_verification_token = 'token-123';
+        $user->save();
+
+        self::assertSame(
+            'token-123',
+            $connection->table('users')->where('id', $userId)->value('email_verification_token')
+        );
+    }
+
+    public function test_insert_select_and_delete_work_with_qualified_columns(): void
+    {
+        $connection = $this->db->connection('tarantool');
+
+        $connection->getSchemaBuilder()->create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->string('email_verification_token')->nullable();
+            $table->timestamps();
+        });
+
+        $userId = $connection->table('users')->insertGetId([
+            'name' => 'Bob',
+            'email_verification_token' => 'token-select-delete',
+            'created_at' => '2026-03-24 00:00:00',
+            'updated_at' => '2026-03-24 00:00:00',
+        ]);
+
+        self::assertIsInt($userId);
+
+        $rows = $connection->table('users')
+            ->select(['users.id', 'users.email_verification_token'])
+            ->where('users.id', $userId)
+            ->get();
+
+        self::assertCount(1, $rows);
+        self::assertSame($userId, $rows[0]['id']);
+        self::assertSame('token-select-delete', $rows[0]['email_verification_token']);
+
+        self::assertSame(
+            1,
+            $connection->table('users')->where('users.id', $userId)->delete()
+        );
+        self::assertSame(0, $connection->table('users')->count());
+    }
+
     public function test_drop_all_tables_handles_foreign_key_dependencies(): void
     {
         $connection = $this->db->connection('tarantool');

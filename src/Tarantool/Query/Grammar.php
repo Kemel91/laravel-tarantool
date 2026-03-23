@@ -137,6 +137,27 @@ class Grammar extends BaseGrammar
     }
 
     /**
+     * Compile the columns for an update statement.
+     *
+     * Tarantool SQL expects bare column names in the SET clause, so we strip any
+     * table qualification that Eloquent may add for timestamp columns.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $values
+     * @return string
+     */
+    protected function compileUpdateColumns(Builder $query, array $values)
+    {
+        return collect($values)
+            ->map(function ($value, $key) {
+                $column = Str::afterLast($key, '.');
+
+                return $this->wrap($column).' = '.$this->parameter($value);
+            })
+            ->implode(', ');
+    }
+
+    /**
      * overrides default wrapUnion function with removing parentheses on union subquery
      * that is how tarantool union works
      *
