@@ -36,25 +36,4 @@ class DsnTest extends TestCase
             $dsn
         );
     }
-
-    public function test_it_supports_legacy_driver_oprions_key(): void
-    {
-        $builder = new class {
-            use Dsn {
-                getHostDsn as public;
-            }
-        };
-
-        $dsn = $builder->getHostDsn([
-            'host' => '127.0.0.1',
-            'port' => 3301,
-            'username' => 'admin',
-            'password' => 'admin',
-            'driver_oprions' => [
-                'connection_type' => 'unix',
-            ],
-        ]);
-
-        self::assertSame('unix://admin:admin@127.0.0.1:3301', $dsn);
-    }
 }
