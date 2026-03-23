@@ -415,6 +415,34 @@ class ConnectionTest extends TestCase
         self::assertSame(2, $connection->table('skills')->count());
     }
 
+    public function test_drop_all_tables_handles_foreign_key_dependencies(): void
+    {
+        $connection = $this->db->connection('tarantool');
+        $schema = $connection->getSchemaBuilder();
+
+        $schema->create('locations', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+        });
+
+        $schema->create('location_transitions', function (Blueprint $table): void {
+            $table->foreignId('from_location_id')->index()->constrained('locations');
+            $table->foreignId('to_location_id')->index()->constrained('locations');
+            $table->string('transition_name');
+            $table->unique(['from_location_id', 'to_location_id']);
+        });
+
+        self::assertContains('locations', array_map('strtolower', $schema->getTableListing()));
+        self::assertContains('location_transitions', array_map('strtolower', $schema->getTableListing()));
+
+        $schema->dropAllTables();
+
+        $tables = array_map('strtolower', $schema->getTableListing());
+
+        self::assertNotContains('locations', $tables);
+        self::assertNotContains('location_transitions', $tables);
+    }
+
     private function createBasicUsersTable(): void
     {
         $this->db->connection('tarantool')->getSchemaBuilder()->create('users', function (Blueprint $table): void {

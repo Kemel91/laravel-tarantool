@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.12] - 2026-03-24
+
+### Fixed
+- Added a Tarantool-specific schema builder with `dropAllTables()` support.
+- Enabled `db:wipe` and `migrate:fresh` for Tarantool connections, including schemas with foreign key dependencies.
+- Added regression coverage for dropping all tables in dependency order.
+
 ## [2.0.6] - 2026-03-23
 
 ### Fixed

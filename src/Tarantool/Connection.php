@@ -7,12 +7,12 @@ namespace Chocofamily\Tarantool;
 use Chocofamily\Tarantool\Query\Builder;
 use Chocofamily\Tarantool\Query\Grammar as QGrammar;
 use Chocofamily\Tarantool\Query\Processor as QProcessor;
+use Chocofamily\Tarantool\Schema\Builder as SchemaBuilder;
 use Chocofamily\Tarantool\Schema\Grammar as SGrammar;
 use Chocofamily\Tarantool\Traits\Dsn;
 use Chocofamily\Tarantool\Traits\Helper;
 use Chocofamily\Tarantool\Traits\Query;
 use Illuminate\Database\Connection as BaseConnection;
-use Illuminate\Database\Schema\Builder as SchemaBuilder;
 use Tarantool\Client\Client as TarantoolClient;
 use Tarantool\Client\SqlQueryResult;
 
