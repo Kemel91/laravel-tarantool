@@ -621,7 +621,7 @@ class ConnectionTest extends TestCase
 
         foreach ($tables as $table) {
             try {
-                $connection->statement(sprintf('drop table "%s"', strtoupper($table)));
+                $connection->statement(sprintf('drop table "%s"', $table));
             } catch (Throwable $exception) {
             }
         }

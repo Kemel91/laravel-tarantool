@@ -33,9 +33,7 @@ class Grammar extends BaseGrammar
      */
     public function wrapTable($table, $prefix = null): string
     {
-        $value = parent::wrapTable($table, $prefix);
-
-        return strtoupper($value);
+        return parent::wrapTable($table, $prefix);
     }
 
     /**
@@ -284,7 +282,7 @@ class Grammar extends BaseGrammar
         $columns = $this->columnize($command->columns);
         $table = $this->wrapTable($blueprint);
 
-        return 'CREATE UNIQUE INDEX '.strtoupper(substr($command->index, 0, 31))." ON {$table} ($columns)";
+        return 'CREATE UNIQUE INDEX '.substr($command->index, 0, 31)." ON {$table} ($columns)";
     }
 
     /**
@@ -299,7 +297,7 @@ class Grammar extends BaseGrammar
         $columns = $this->columnize($command->columns);
         $table = $this->wrapTable($blueprint);
 
-        return 'CREATE INDEX '.strtoupper(substr($command->index, 0, 31))." ON {$table} ($columns)";
+        return 'CREATE INDEX '.substr($command->index, 0, 31)." ON {$table} ($columns)";
     }
 
     /**
@@ -335,7 +333,7 @@ class Grammar extends BaseGrammar
         // an array of columns to comma-delimited strings for the SQL queries.
         $columns = $this->columnize($command->columns);
         $onColumns = $this->columnize((array) $command->references);
-        $sql = "alter table {$table} add constraint ".strtoupper(substr($command->index, 0, 31))." ";
+        $sql = "alter table {$table} add constraint ".substr($command->index, 0, 31)." ";
         $sql .= "foreign key ({$columns}) references {$on} ({$onColumns})";
         // Once we have the basic foreign key creation statement constructed we can
         // build out the syntax for what should happen on an update or delete of

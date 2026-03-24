@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.17] - 2026-03-24
+
+### Changed
+- Removed forced uppercasing for table names in query and schema grammars.
+- Removed forced uppercasing for generated index and foreign key constraint names so schema objects now keep Laravel-style lowercase names.
+- Updated regression cleanup paths to work with natural lowercase table names.
+
 ## [2.0.16] - 2026-03-24
 
 ### Fixed

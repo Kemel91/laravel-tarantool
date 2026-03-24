@@ -87,7 +87,7 @@ class Grammar extends BaseGrammar
             return parent::wrapTable($value, $prefix);
         }
 
-        return strtoupper(parent::wrapTable($value, $prefix));
+        return parent::wrapTable($value, $prefix);
     }
 
     /**
