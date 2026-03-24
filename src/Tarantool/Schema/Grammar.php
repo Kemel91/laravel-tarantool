@@ -210,7 +210,6 @@ class Grammar extends BaseGrammar
         $columns = $this->autoAddPrimaryKey($compiledColumns);
         $hasInlinePrimaryKey = $this->columnsContainPrimaryKey($compiledColumns);
         $primaryColumns = $this->getPrimaryColumns($blueprint);
-
         if (empty($primaryColumns) && ! $hasInlinePrimaryKey) {
             $primaryColumns = $this->getPromotableUniqueColumns($blueprint);
         }
@@ -460,6 +459,17 @@ class Grammar extends BaseGrammar
     protected function typeString(Fluent $column)
     {
         return 'VARCHAR ('.$column->length.')';
+    }
+
+    /**
+     * Create the column definition for a UUID type.
+     *
+     * @param  \Illuminate\Support\Fluent  $column
+     * @return string
+     */
+    protected function typeUuid(Fluent $column)
+    {
+        return 'VARCHAR (36)';
     }
 
     /**

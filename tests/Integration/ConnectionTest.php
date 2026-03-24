@@ -63,12 +63,12 @@ class ConnectionTest extends TestCase
         $provider->boot();
         Facade::setFacadeApplication($this->app);
 
-        $this->dropTables('item_attributes', 'npc_dialogs', 'skills', 'players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'npcs', 'users', 'locations');
+        $this->dropTables('player_journal', 'item_attributes', 'npc_dialogs', 'skills', 'players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'npcs', 'users', 'locations');
     }
 
     protected function tearDown(): void
     {
-        $this->dropTables('item_attributes', 'npc_dialogs', 'skills', 'players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'npcs', 'users', 'locations');
+        $this->dropTables('player_journal', 'item_attributes', 'npc_dialogs', 'skills', 'players', 'location_transitions', 'password_reset_tokens', 'sessions', 'migrations', 'npcs', 'users', 'locations');
         Facade::clearResolvedInstances();
         Facade::setFacadeApplication(null);
         Container::setInstance(null);
@@ -576,6 +576,40 @@ class ConnectionTest extends TestCase
         self::assertSame(['id'], collect($indexes)->firstWhere('primary', true)['columns']);
 
         self::assertIsArray($schema->getForeignKeys('users'));
+    }
+
+    public function test_uuid_columns_can_be_created_when_the_uuid_is_the_primary_key(): void
+    {
+        $connection = $this->db->connection('tarantool');
+        $schema = $connection->getSchemaBuilder();
+
+        $schema->create('players', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+        });
+
+        $schema->create('player_journal', function (Blueprint $table): void {
+            $table->uuid('uuid')->primary();
+            $table->foreignId('player_id')->index()->constrained('players');
+            $table->text('message');
+        });
+
+        $playerId = $connection->table('players')->insertGetId([
+            'name' => 'Hero',
+        ]);
+
+        self::assertTrue($connection->table('player_journal')->insert([
+            'uuid' => '7d9e0b42-855f-4db9-baf6-31e711f2c7e5',
+            'player_id' => $playerId,
+            'message' => 'First message',
+        ]));
+        self::assertSame(1, $connection->table('player_journal')->count());
+
+        $columns = $schema->getColumnListing('player_journal');
+
+        self::assertContains('uuid', $columns);
+        self::assertContains('player_id', $columns);
+        self::assertContains('message', $columns);
     }
 
     public function test_drop_all_tables_handles_foreign_key_dependencies(): void

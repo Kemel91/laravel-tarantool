@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.18] - 2026-03-24
+
+### Fixed
+- Added schema grammar support for Laravel's `uuid()` column type.
+- Added regression coverage for tables that use a UUID primary key together with foreign keys and text columns.
+
 ## [2.0.17] - 2026-03-24
 
 ### Changed
