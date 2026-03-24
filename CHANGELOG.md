@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.19] - 2026-03-24
+
+### Fixed
+- Preserved boolean bindings as `true` / `false` for Tarantool connections instead of coercing them to `1` / `0`.
+- Fixed query conditions on boolean columns such as `where('is_ghost', true)`.
+- Added regression coverage for inserts, selects, and updates that target Tarantool boolean columns.
+
 ## [2.0.18] - 2026-03-24
 
 ### Fixed

@@ -13,6 +13,7 @@ use Chocofamily\Tarantool\Traits\Dsn;
 use Chocofamily\Tarantool\Traits\Helper;
 use Chocofamily\Tarantool\Traits\Query;
 use Illuminate\Database\Connection as BaseConnection;
+use DateTimeInterface;
 use Tarantool\Client\Client as TarantoolClient;
 use Tarantool\Client\SqlQueryResult;
 
@@ -99,7 +100,15 @@ class Connection extends BaseConnection
      */
     public function prepareBindings(array $bindings): array
     {
-        return parent::prepareBindings($bindings);
+        $grammar = $this->getQueryGrammar();
+
+        foreach ($bindings as $key => $value) {
+            if ($value instanceof DateTimeInterface) {
+                $bindings[$key] = $value->format($grammar->getDateFormat());
+            }
+        }
+
+        return $bindings;
     }
 
     /**

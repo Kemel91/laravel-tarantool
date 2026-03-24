@@ -166,6 +166,43 @@ class ConnectionTest extends TestCase
         );
     }
 
+    public function test_boolean_bindings_are_preserved_for_scalar_boolean_columns(): void
+    {
+        $connection = $this->db->connection('tarantool');
+
+        $connection->getSchemaBuilder()->create('npcs', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->boolean('is_ghost')->default(false);
+        });
+
+        $aliveId = $connection->table('npcs')->insertGetId([
+            'name' => 'Alive NPC',
+            'is_ghost' => false,
+        ]);
+        $ghostId = $connection->table('npcs')->insertGetId([
+            'name' => 'Ghost NPC',
+            'is_ghost' => true,
+        ]);
+
+        $ghosts = $connection->table('npcs')
+            ->where('is_ghost', '=', true)
+            ->orderBy('id')
+            ->get();
+
+        self::assertCount(1, $ghosts);
+        self::assertSame($ghostId, $ghosts[0]['id']);
+
+        self::assertSame(
+            1,
+            $connection->table('npcs')
+                ->where('is_ghost', '=', false)
+                ->where('id', '=', $aliveId)
+                ->update(['is_ghost' => true])
+        );
+        self::assertSame(2, $connection->table('npcs')->where('is_ghost', '=', true)->count());
+    }
+
     public function test_eloquent_models_use_the_tarantool_connection(): void
     {
         $this->createBasicUsersTable();
